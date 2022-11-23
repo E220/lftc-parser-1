@@ -1,5 +1,5 @@
 package models;
 
-public interface Atom {
+public interface Symbol {
     String getString();
 }

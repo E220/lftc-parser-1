@@ -5,10 +5,12 @@ import models.Production;
 import models.Terminal;
 
 import java.util.List;
+import java.util.Set;
 
 public record Grammar(
-        List<Terminal> terminals,
-        List<NonTerminal> nonTerminals,
+        Set<Terminal> terminals,
+        Set<NonTerminal> nonTerminals,
+        NonTerminal startingSymbol,
         List<Production> productions
 ) {
 }

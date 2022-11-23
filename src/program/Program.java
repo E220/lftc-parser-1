@@ -1,9 +1,12 @@
 package program;
 
 import grammar.Grammar;
+import grammar.GrammarFactory;
+import grammar.GrammarFactoryException;
 import menu.Menu;
 import menu.MenuItem;
 
+import java.io.FileNotFoundException;
 import java.util.Arrays;
 
 public class Program {
@@ -25,7 +28,15 @@ public class Program {
     }
 
     private void readGrammar() {
-        mainMenu.printLine("Not implemented");
+        mainMenu.printLine("Input file name");
+        final String filename = mainMenu.readLine();
+        try {
+            this.grammar = GrammarFactory.fromFile("src/" + filename);
+        } catch (FileNotFoundException e) {
+            mainMenu.printLine("File not found");
+        } catch (GrammarFactoryException e) {
+            mainMenu.printLine(e.getMessage());
+        }
     }
 
     private void printGrammar() {
