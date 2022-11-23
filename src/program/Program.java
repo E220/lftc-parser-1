@@ -1,6 +1,7 @@
 package program;
 
 import grammar.Grammar;
+import grammar.GrammarChecker;
 import grammar.GrammarFactory;
 import grammar.GrammarFactoryException;
 import menu.Menu;
@@ -51,7 +52,7 @@ public class Program {
 
     private void printGrammar() {
         if (Objects.isNull(grammar)) {
-            mainMenu.printLine("No FA provided");
+            mainMenu.printLine("No grammar provided");
             return;
         }
         printMenu.run();
@@ -86,7 +87,11 @@ public class Program {
     }
 
     private void checkCFG() {
-        mainMenu.printLine("Not implemented");
+        if (Objects.isNull(grammar)) {
+            mainMenu.printLine("No grammar provided");
+            return;
+        }
+        mainMenu.printLine(GrammarChecker.checkCFG(grammar) ? "CFG" : "Not CFG");
     }
 
     private void stop() {
