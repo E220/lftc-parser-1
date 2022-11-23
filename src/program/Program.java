@@ -8,9 +8,11 @@ import menu.MenuItem;
 
 import java.io.FileNotFoundException;
 import java.util.Arrays;
+import java.util.Objects;
 
 public class Program {
     private final Menu mainMenu;
+    private final Menu printMenu;
 
     public Grammar grammar;
 
@@ -20,6 +22,13 @@ public class Program {
                 new MenuItem("print", "Print Grammar", this::printGrammar),
                 new MenuItem("check", "CFG check", this::checkCFG),
                 new MenuItem("stop", "Stop program", this::stop)
+        ));
+        printMenu = new Menu(Arrays.asList(
+                new MenuItem("non-term", "Print non-terminals", this::printNonTerminals),
+                new MenuItem("term", "Print terminals", this::printTerminals),
+                new MenuItem("prod", "Print productions", this::printProductions),
+                new MenuItem("prod-for", "Print productions of non-terminal", this::printProductionsFor),
+                new MenuItem("back", "Go back", this::goBack)
         ));
     }
 
@@ -40,7 +49,31 @@ public class Program {
     }
 
     private void printGrammar() {
-        mainMenu.printLine("Not implemented");
+        if (Objects.isNull(grammar)) {
+            mainMenu.printLine("No FA provided");
+            return;
+        }
+        printMenu.run();
+    }
+
+    private void printNonTerminals() {
+        printMenu.printLine(grammar.nonTerminals().toString());
+    }
+
+    private void printTerminals() {
+        printMenu.printLine(grammar.terminals().toString());
+    }
+
+    private void printProductions() {
+        printMenu.printLine(grammar.productions().toString());
+    }
+
+    private void printProductionsFor() {
+        printMenu.printLine("Not implemented");
+    }
+
+    private void goBack() {
+        printMenu.setRunning(false);
     }
 
     private void checkCFG() {
