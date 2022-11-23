@@ -2,3 +2,6 @@ A B C S
 a b c
 S
 A a -> S
+B a -> C
+C -> a b
+S B -> A B C

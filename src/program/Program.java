@@ -5,6 +5,7 @@ import grammar.GrammarFactory;
 import grammar.GrammarFactoryException;
 import menu.Menu;
 import menu.MenuItem;
+import models.NonTerminal;
 
 import java.io.FileNotFoundException;
 import java.util.Arrays;
@@ -69,7 +70,15 @@ public class Program {
     }
 
     private void printProductionsFor() {
-        printMenu.printLine("Not implemented");
+        printMenu.printLine("Input non-terminal: ");
+        final String string = printMenu.readLine();
+        final NonTerminal nonTerminal = new NonTerminal(string);
+        if (!grammar.nonTerminals().contains(nonTerminal)) {
+            printMenu.printLine("Invalid non-terminal");
+            return;
+        }
+
+        printMenu.printLine(grammar.productionsFor(nonTerminal).toString());
     }
 
     private void goBack() {

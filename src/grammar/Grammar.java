@@ -6,6 +6,7 @@ import models.Terminal;
 
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public record Grammar(
         Set<Terminal> terminals,
@@ -13,4 +14,9 @@ public record Grammar(
         NonTerminal startingSymbol,
         List<Production> productions
 ) {
+    public List<Production> productionsFor(NonTerminal nonTerminal) {
+        return productions.stream()
+                .filter(production -> production.lhs().contains(nonTerminal))
+                .collect(Collectors.toList());
+    }
 }
