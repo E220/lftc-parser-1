@@ -12,6 +12,6 @@ public class GrammarChecker {
         return grammar.productions().stream()
                 .map(Production::lhs)
                 .flatMap(List::stream)
-                .allMatch(symbol -> nonTerminals.contains(new NonTerminal(symbol.getString())));
+                .allMatch(symbol -> nonTerminals.contains(new NonTerminal(symbol)));
     }
 }
