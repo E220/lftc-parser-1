@@ -1,19 +1,63 @@
 package parser;
 
-public enum ParserState {
-    NORMAL("q"),
-    BACK("b"),
-    FINAL("f"),
-    ERROR("e");
+import models.NonTerminal;
+import models.Symbol;
 
-    ParserState(String string) {
-        this.string = string;
+import java.util.Stack;
+
+public class ParserState {
+
+    private State state;
+    private int position;
+    private final Stack<Symbol> workingStack;
+    private final Stack<Symbol> inputStack;
+
+    public State getState() {
+        return state;
     }
 
-    private final String string;
+    public void setState(State state) {
+        this.state = state;
+    }
 
-    @Override
-    public String toString() {
-        return string;
+    public int getPosition() {
+        return position;
+    }
+
+    public void setPosition(int position) {
+        this.position = position;
+    }
+
+    public Stack<Symbol> getWorkingStack() {
+        return workingStack;
+    }
+
+    public Stack<Symbol> getInputStack() {
+        return inputStack;
+    }
+
+    public ParserState(NonTerminal startingSymbol) {
+        this.state = State.NORMAL;
+        this.position = 0;
+        this.workingStack = new Stack<>();
+        this.inputStack = new Stack<>(){{ this.push(startingSymbol); }};
+    }
+
+    public enum State {
+        NORMAL("q"),
+        BACK("b"),
+        FINAL("f"),
+        ERROR("e");
+
+        State(String string) {
+            this.string = string;
+        }
+
+        private final String string;
+
+        @Override
+        public String toString() {
+            return string;
+        }
     }
 }

@@ -1,83 +1,27 @@
 package parser;
 
 import grammar.Grammar;
-import models.NonTerminal;
-import models.Production;
-import models.Symbol;
 import models.Terminal;
+import parser.operations.ParserOperation;
+import parser.operations.ParserOperations;
 
 import java.util.List;
-import java.util.Stack;
 
-public class Parser {
+public record Parser(Grammar grammar, ParserState state) {
 
-    private ParserState state;
-    private int position;
-    private Stack<Symbol> workingStack;
-    private Stack<Symbol> inputStack;
-
-    public Parser(ParserState state, int position, Stack<Symbol> workingStack, Stack<Symbol> inputStack) {
-        this.state = state;
-        this.position = position;
-        this.workingStack = workingStack;
-        this.inputStack = inputStack;
+    public Parser(Grammar grammar) {
+        this(grammar, new ParserState(grammar.startingSymbol()));
     }
-    private void expand(Grammar grammar) {
-        // remove non-terminal from input stack
-        final NonTerminal terminal = new NonTerminal(inputStack.pop());
 
-        // add non-terminal to working stack
-        workingStack.push(terminal);
-
-        // add rhs of non-terminal's first production to input stack
-        final Production firstProduction = grammar.productionsFor(terminal).get(0);
-        final List<Symbol> rhs = firstProduction.rhs();
-        for (int i = rhs.size() - 1; i >= 0; i--) {
-            inputStack.push(rhs.get(i));
+    public void parse(List<Terminal> input) {
+        final List<ParserOperation> operations = ParserOperations.operations;
+        while(state.getState() != ParserState.State.ERROR && state.getState() != ParserState.State.FINAL) {
+            for (final ParserOperation operation : operations) {
+                if (operation.condition().met(this, input.get(state.getPosition()))) {
+                    operation.action().execute(this);
+                    break;
+                }
+            }
         }
-    }
-
-    private void advance() {
-        // remove terminal from input stack
-        final Terminal terminal = new Terminal(inputStack.pop());
-
-        // add terminal to working stack
-        workingStack.push(terminal);
-
-        // increment position
-        position++;
-    }
-
-    private void momentaryInsuccess() {
-        // set state to back
-        state = ParserState.BACK;
-    }
-
-    private void back() {
-        // remove terminal from working stack
-        final Terminal terminal = new Terminal(workingStack.pop());
-
-        // add terminal to input stack
-        inputStack.push(terminal);
-
-        // decrease position
-        position--;
-    }
-
-    private void anotherTryNext(Grammar grammar) {
-        throw new RuntimeException("Not yet implemented");
-    }
-
-    private void anotherTryBack() {
-        throw new RuntimeException("Not yet implemented");
-    }
-
-    private void anotherTryError() {
-        throw new RuntimeException("Not yet implemented");
-    }
-
-    private void success() {
-        // set state to final
-        state = ParserState.FINAL;
     }
 }
