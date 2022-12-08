@@ -64,7 +64,15 @@ public class Parser {
         position--;
     }
 
-    private void anotherTry() {
+    private void anotherTryNext(Grammar grammar) {
+        throw new RuntimeException("Not yet implemented");
+    }
+
+    private void anotherTryBack() {
+        throw new RuntimeException("Not yet implemented");
+    }
+
+    private void anotherTryError() {
         throw new RuntimeException("Not yet implemented");
     }
 
