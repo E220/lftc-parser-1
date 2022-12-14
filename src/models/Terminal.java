@@ -12,6 +12,16 @@ public record Terminal(String string) implements Symbol {
     }
 
     @Override
+    public boolean isTerminal() {
+        return true;
+    }
+
+    @Override
+    public boolean isNonTerminal() {
+        return false;
+    }
+
+    @Override
     public String toString() {
         return string;
     }

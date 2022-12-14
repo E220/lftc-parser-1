@@ -12,6 +12,16 @@ public record NonTerminal(String string) implements Symbol {
     }
 
     @Override
+    public boolean isTerminal() {
+        return false;
+    }
+
+    @Override
+    public boolean isNonTerminal() {
+        return true;
+    }
+
+    @Override
     public String toString() {
         return string;
     }

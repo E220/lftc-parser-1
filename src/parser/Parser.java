@@ -4,13 +4,14 @@ import grammar.Grammar;
 import models.Terminal;
 import parser.operations.ParserOperation;
 import parser.operations.ParserOperations;
+import parser.output.ParserOutput;
 
 import java.util.List;
 
-public record Parser(Grammar grammar, ParserState state) {
+public record Parser(Grammar grammar, ParserState state, ParserOutput output) {
 
     public Parser(Grammar grammar) {
-        this(grammar, new ParserState(grammar.startingSymbol()));
+        this(grammar, new ParserState(grammar.startingSymbol()), new ParserOutput(grammar.startingSymbol()));
     }
 
     public void parse(List<Terminal> input) {
