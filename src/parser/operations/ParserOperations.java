@@ -9,6 +9,7 @@ import parser.ParserState;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
+import java.util.Stack;
 
 public class ParserOperations {
 
@@ -27,11 +28,15 @@ public class ParserOperations {
                 final Production firstProduction = parser.grammar().productionsFor(nonTerminal).get(0);
                 parser.output().push(firstProduction);
                 final List<Symbol> rhs = firstProduction.rhs();
-                for (int i = rhs.size() - 1; i >= 0; i--) {
-                    state.getInputStack().push(rhs.get(i));
-                }
+                pushItemsInReverse(state.getInputStack(), rhs);
             }
     );
+
+    private static <T> void pushItemsInReverse(Stack<T> stack, List<T> items) {
+        for (int i = items.size() - 1; i >= 0; i--) {
+            stack.push(items.get(i));
+        }
+    }
 
     private static final ParserOperation advance = new ParserOperation(
             ParserState.State.NORMAL,
@@ -69,23 +74,61 @@ public class ParserOperations {
             }
     );
 
-    private static final ParserOperation anotherTry = new ParserOperation(
-            ParserState.State.BACK,
-            (parser, input) -> { throw new RuntimeException("Not yet implemented"); },
-            parser -> { throw new RuntimeException("Not yet implemented"); }
-    );
-
     private static final ParserOperation anotherTryNext = new ParserOperation(
             ParserState.State.BACK,
             (parser, input) -> {
-                throw new RuntimeException("Not yet implemented");
+                final Symbol topOfWorkingStack = parser.state().getWorkingStack().peek();
+                if (topOfWorkingStack.isTerminal()) {
+                    return false;
+                }
+
+                final List<Production> productions = parser.grammar().productionsFor(new NonTerminal(topOfWorkingStack));
+                final Production lastProductionTried = parser.output().peek();
+                final int lastIndexTried = productions.indexOf(lastProductionTried);
+                return lastIndexTried + 1 < productions.size();
             },
             parser -> {
-                throw new RuntimeException("Not yet implemented");
+                final ParserState state = parser.state();
+                final Stack<Symbol> inputStack = state.getInputStack();
+
+                state.setState(ParserState.State.NORMAL);
+                final Production lastProductionTried = parser.output().pop();
+                for (int i = 0; i < lastProductionTried.rhs().size(); i++) {
+                    inputStack.pop();
+                }
+                pushItemsInReverse(inputStack, lastProductionTried.rhs());
             }
     );
 
-//    private static final
+    private static final ParserOperation anotherTryBack = new ParserOperation(
+            ParserState.State.BACK,
+            (parser, input) -> {
+                final Symbol topOfWorkingStack = parser.state().getWorkingStack().peek();
+                return topOfWorkingStack.isNonTerminal();
+            },
+            parser -> {
+                final ParserState state = parser.state();
+                final Stack<Symbol> inputStack = state.getInputStack();
+
+                final Production lastProductionTried = parser.output().pop();
+                for (int i = 0; i < lastProductionTried.rhs().size(); i++) {
+                    inputStack.pop();
+                }
+
+                final Symbol topOfWorkingStack = state.getWorkingStack().pop();
+                inputStack.push(topOfWorkingStack);
+            }
+    );
+
+    private static final ParserOperation anotherTryError = new ParserOperation(
+            ParserState.State.BACK,
+            (parser, input) -> {
+                final Stack<Symbol> workingStack = parser.state().getWorkingStack();
+                final Symbol topOfWorkingStack = workingStack.peek();
+                return workingStack.size() == 1 && topOfWorkingStack.equals(parser.grammar().startingSymbol());
+            },
+            parser -> parser.state().setState(ParserState.State.ERROR)
+    );
 
     private static final ParserOperation success = new ParserOperation(
             ParserState.State.NORMAL,
@@ -98,7 +141,9 @@ public class ParserOperations {
             advance,
             momentaryInsuccess,
             back,
-            anotherTry,
+            anotherTryNext,
+            anotherTryBack,
+            anotherTryError,
             success
     );
 }
