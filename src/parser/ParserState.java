@@ -43,6 +43,11 @@ public class ParserState {
         this.inputStack = new Stack<>(){{ this.push(startingSymbol); }};
     }
 
+    @Override
+    public String toString() {
+        return "(" + state.string + ", " + position + ", " + workingStack + ", " + inputStack + ")";
+    }
+
     public enum State {
         NORMAL("q"),
         BACK("b"),

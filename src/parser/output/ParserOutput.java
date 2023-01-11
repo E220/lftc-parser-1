@@ -4,10 +4,7 @@ import models.NonTerminal;
 import models.Production;
 import models.Symbol;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Stack;
+import java.util.*;
 
 public class ParserOutput {
     private final List<ParserOutputNode> table;
@@ -22,14 +19,28 @@ public class ParserOutput {
         printerPos = 1;
     }
 
+    @Override
+    public String toString() {
+        final StringBuilder string = new StringBuilder("[");
+        for (int i = 0; i < printerPos; i++) {
+            string.append(table.get(i));
+        }
+        string.append("], cursor: ");
+        string.append(cursorPos);
+        return string.toString();
+    }
+
     public void push(Production production) {
         final List<Symbol> lhs = production.lhs();
-        if (lhs.get(0) != table.get(cursorPos).symbol()) {
+        if (!lhs.get(0).equals(table.get(cursorPos).getSymbol())) {
             throw new IllegalStateException();
         }
 
-        pushSymbols(production.rhs());
-        moveCursorForward();
+        table.get(cursorPos).setFirstChildIndex(printerPos);
+        pushSymbols(production.rhs()).ifPresentOrElse(
+                nonTerminal -> cursorPos = nonTerminal,
+                this::moveCursorForward
+        );
     }
 
     public Production pop() {
@@ -37,9 +48,8 @@ public class ParserOutput {
             throw new IllegalStateException();
         }
 
-        final Production lastProduction = getLastProduction(true);
         moveCursorBackwards();
-        return lastProduction;
+        return getLastProduction(true);
     }
 
     public Production peek() {
@@ -50,12 +60,28 @@ public class ParserOutput {
         return getLastProduction(false);
     }
 
-    private void pushSymbols(List<Symbol> symbols) {
-        final int symbolCount = symbols.size();
-        for (int i = 0; i < symbolCount - 1; i++) {
-            pushNode(new ParserOutputNode(table.size(), symbols.get(i), cursorPos, table.size() + 1));
+    public void moveCursorForward() {
+        for (cursorPos++; cursorPos < printerPos; cursorPos++) {
+            if (table.get(cursorPos).getSymbol().isNonTerminal()) {
+                break;
+            }
         }
-        pushNode(new ParserOutputNode(table.size(), symbols.get(symbolCount - 1), cursorPos));
+    }
+
+    public void moveCursorBackwards() {
+        cursorPos = table.get(cursorPos).getParentIndex();
+    }
+
+    private Optional<Integer> pushSymbols(List<Symbol> symbols) {
+        table.get(cursorPos).setFirstChildIndex(printerPos);
+        Integer firstNonTerminalPos = null;
+        for (final Symbol symbol : symbols) {
+            if (symbol.isNonTerminal() && Objects.isNull(firstNonTerminalPos)) {
+                firstNonTerminalPos = printerPos;
+            }
+            pushNode(new ParserOutputNode(printerPos, symbol, cursorPos));
+        }
+        return Optional.ofNullable(firstNonTerminalPos);
     }
 
     private void pushNode(ParserOutputNode node) {
@@ -67,33 +93,21 @@ public class ParserOutput {
         printerPos++;
     }
 
-    private void moveCursorForward() {
-        for (cursorPos++; cursorPos < printerPos; cursorPos++) {
-            if (table.get(cursorPos).symbol().isNonTerminal()) {
-                break;
-            }
-        }
-    }
-
-    private void moveCursorBackwards() {
-        for (cursorPos--; cursorPos >= 0; cursorPos--) {
-            if (table.get(cursorPos).symbol().isNonTerminal()) {
-                break;
-            }
-        }
-    }
-
     private Production getLastProduction(boolean shouldPop) {
-        final Integer parentIndex = table.get(printerPos - 1).parentIndex();
+        // TODO: rewrite using PON.firstChild
+        final Integer parentIndex = table.get(printerPos - 1).getParentIndex();
         final Stack<Symbol> rhs = new Stack<>();
-        while(table.get(printerPos - 1).parentIndex().equals(parentIndex)) {
-            rhs.push(table.get(printerPos - 1).symbol());
+        int position = printerPos - 1;
+
+        while(parentIndex.equals(table.get(position).getParentIndex())) {
+            rhs.push(table.get(position).getSymbol());
+            position--;
             if (shouldPop) {
                 printerPos--;
             }
         }
 
-        final Symbol parent = table.get(parentIndex).symbol();
+        final Symbol parent = table.get(parentIndex).getSymbol();
         Collections.reverse(rhs);
         return new Production(Collections.singletonList(parent), rhs);
     }

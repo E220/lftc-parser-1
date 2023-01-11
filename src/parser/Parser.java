@@ -18,7 +18,7 @@ public record Parser(Grammar grammar, ParserState state, ParserOutput output) {
         final List<ParserOperation> operations = ParserOperations.operations;
         while(state.getState() != ParserState.State.ERROR && state.getState() != ParserState.State.FINAL) {
             for (final ParserOperation operation : operations) {
-                if (operation.condition().met(this, input.get(state.getPosition()))) {
+                if (operation.ifState().equals(state.getState()) && operation.condition().met(this, input, state.getPosition())) {
                     operation.action().execute(this);
                     break;
                 }

@@ -7,10 +7,12 @@ import grammar.GrammarFactoryException;
 import menu.Menu;
 import menu.MenuItem;
 import models.NonTerminal;
+import models.Terminal;
+import parser.Parser;
 
+import java.io.File;
 import java.io.FileNotFoundException;
-import java.util.Arrays;
-import java.util.Objects;
+import java.util.*;
 
 public class Program {
     private final Menu mainMenu;
@@ -23,6 +25,7 @@ public class Program {
                 new MenuItem("read", "Read Grammar", this::readGrammar),
                 new MenuItem("print", "Print Grammar", this::printGrammar),
                 new MenuItem("check", "CFG check", this::checkCFG),
+                new MenuItem("parse", "Parse input", this::parseInput),
                 new MenuItem("stop", "Stop program", this::stop)
         ));
         printMenu = new Menu(Arrays.asList(
@@ -96,5 +99,31 @@ public class Program {
 
     private void stop() {
         mainMenu.setRunning(false);
+    }
+
+    private void parseInput() {
+        if (Objects.isNull(grammar)) {
+            mainMenu.printLine("No grammar provided");
+            return;
+        }
+        if (!GrammarChecker.checkCFG(grammar)) {
+            mainMenu.printLine("Grammar not CFG");
+        }
+
+        mainMenu.printLine("Input file name");
+        final String filename = mainMenu.readLine();
+
+        final List<Terminal> input = new ArrayList<>();
+        try(final Scanner scanner = new Scanner(new File("src/" + filename))) {
+            while(scanner.hasNextLine()) {
+                input.addAll(Arrays.stream(scanner.nextLine().split("\\s")).map(Terminal::new).toList());
+            }
+        } catch (FileNotFoundException e) {
+            mainMenu.printLine("File not found");
+            return;
+        }
+        final Parser parser = new Parser(grammar);
+        parser.parse(input);
+        System.out.println(parser.output());
     }
 }

@@ -5,6 +5,7 @@ import models.Production;
 import models.Symbol;
 import models.Terminal;
 import parser.ParserState;
+import parser.output.ParserOutput;
 
 import java.util.Arrays;
 import java.util.List;
@@ -15,8 +16,12 @@ public class ParserOperations {
 
     private static final ParserOperation expand = new ParserOperation(
             ParserState.State.NORMAL,
-            (parser, input) -> {
-                final Symbol topOfInputStack = parser.state().getInputStack().peek();
+            (parser, input, position) -> {
+                final Stack<Symbol> inputStack = parser.state().getInputStack();
+                if (inputStack.empty()) {
+                    return false;
+                }
+                final Symbol topOfInputStack = inputStack.peek();
                 return topOfInputStack.isNonTerminal();
             },
             parser -> {
@@ -40,9 +45,13 @@ public class ParserOperations {
 
     private static final ParserOperation advance = new ParserOperation(
             ParserState.State.NORMAL,
-            (parser, input) -> {
-                final Symbol topOfInputStack = parser.state().getInputStack().peek();
-                return topOfInputStack.isTerminal() && topOfInputStack.equals(new Terminal(input));
+            (parser, input, position) -> {
+                final Stack<Symbol> inputStack = parser.state().getInputStack();
+                if (inputStack.empty()) {
+                    return false;
+                }
+                final Symbol topOfInputStack = inputStack.peek();
+                return topOfInputStack.isTerminal() && input.size() > position && topOfInputStack.equals(input.get(position));
             },
             parser -> {
                 final ParserState state = parser.state();
@@ -54,17 +63,25 @@ public class ParserOperations {
 
     private static final ParserOperation momentaryInsuccess = new ParserOperation(
             ParserState.State.NORMAL,
-            (parser, input) -> {
-                final Symbol topOfInputStack = parser.state().getInputStack().peek();
-                return topOfInputStack.isTerminal() && topOfInputStack.equals(new Terminal(input));
+            (parser, input, position) -> {
+                final Stack<Symbol> inputStack = parser.state().getInputStack();
+                if (inputStack.empty()) {
+                    return false;
+                }
+                final Symbol topOfInputStack = inputStack.peek();
+                return topOfInputStack.isTerminal() && input.size() > position && !topOfInputStack.equals(input.get(position));
             },
             parser -> parser.state().setState(ParserState.State.BACK)
     );
 
     private static final ParserOperation back = new ParserOperation(
             ParserState.State.BACK,
-            (parser, input) -> {
-                final Symbol topOfWorkingStack = parser.state().getWorkingStack().peek();
+            (parser, input, position) -> {
+                final Stack<Symbol> workingStack = parser.state().getWorkingStack();
+                if (workingStack.empty()) {
+                    return false;
+                }
+                final Symbol topOfWorkingStack = workingStack.peek();
                 return topOfWorkingStack.isTerminal();
             },
             parser -> {
@@ -76,8 +93,12 @@ public class ParserOperations {
 
     private static final ParserOperation anotherTryNext = new ParserOperation(
             ParserState.State.BACK,
-            (parser, input) -> {
-                final Symbol topOfWorkingStack = parser.state().getWorkingStack().peek();
+            (parser, input, position) -> {
+                final Stack<Symbol> workingStack = parser.state().getWorkingStack();
+                if (workingStack.empty()) {
+                    return false;
+                }
+                final Symbol topOfWorkingStack = workingStack.peek();
                 if (topOfWorkingStack.isTerminal()) {
                     return false;
                 }
@@ -92,18 +113,29 @@ public class ParserOperations {
                 final Stack<Symbol> inputStack = state.getInputStack();
 
                 state.setState(ParserState.State.NORMAL);
-                final Production lastProductionTried = parser.output().pop();
+                final ParserOutput output = parser.output();
+                final Production lastProductionTried = output.pop();
                 for (int i = 0; i < lastProductionTried.rhs().size(); i++) {
                     inputStack.pop();
                 }
-                pushItemsInReverse(inputStack, lastProductionTried.rhs());
+
+                final NonTerminal nonTerminal = new NonTerminal(state.getWorkingStack().peek());
+                final List<Production> productions = parser.grammar().productionsFor(new NonTerminal(nonTerminal));
+                final int lastIndexTried = productions.indexOf(lastProductionTried);
+                final Production nextProduction = productions.get(lastIndexTried + 1);
+                output.push(nextProduction);
+                pushItemsInReverse(inputStack, nextProduction.rhs());
             }
     );
 
     private static final ParserOperation anotherTryBack = new ParserOperation(
             ParserState.State.BACK,
-            (parser, input) -> {
-                final Symbol topOfWorkingStack = parser.state().getWorkingStack().peek();
+            (parser, input, position) -> {
+                final Stack<Symbol> workingStack = parser.state().getWorkingStack();
+                if (workingStack.empty()) {
+                    return false;
+                }
+                final Symbol topOfWorkingStack = workingStack.peek();
                 return topOfWorkingStack.isNonTerminal();
             },
             parser -> {
@@ -122,8 +154,11 @@ public class ParserOperations {
 
     private static final ParserOperation anotherTryError = new ParserOperation(
             ParserState.State.BACK,
-            (parser, input) -> {
+            (parser, input, position) -> {
                 final Stack<Symbol> workingStack = parser.state().getWorkingStack();
+                if (workingStack.empty()) {
+                    return false;
+                }
                 final Symbol topOfWorkingStack = workingStack.peek();
                 return workingStack.size() == 1 && topOfWorkingStack.equals(parser.grammar().startingSymbol());
             },
@@ -132,7 +167,7 @@ public class ParserOperations {
 
     private static final ParserOperation success = new ParserOperation(
             ParserState.State.NORMAL,
-            (parser, input) -> parser.state().getInputStack().empty(),
+            (parser, input, position) -> parser.state().getInputStack().empty(),
             parser -> parser.state().setState(ParserState.State.FINAL)
     );
 
