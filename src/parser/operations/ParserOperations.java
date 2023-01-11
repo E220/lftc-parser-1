@@ -3,13 +3,11 @@ package parser.operations;
 import models.NonTerminal;
 import models.Production;
 import models.Symbol;
-import models.Terminal;
 import parser.ParserState;
 import parser.output.ParserOutput;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Set;
 import java.util.Stack;
 
 public class ParserOperations {
